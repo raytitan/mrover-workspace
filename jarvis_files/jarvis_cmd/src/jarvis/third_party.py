@@ -69,16 +69,17 @@ def check_rapidjson(ctx):
 
 def ensure_rapidjson(ctx):
     """
-    Installs RapidJson into the product venv.
+    Installs rapidjson into the product venv.
     """
     if check_rapidjson(ctx):
-        print("RapidJson already installed, skipping.")
+        print("rapidjson already installed, skipping.")
         return
 
     rapidjson_dir = os.path.join(ctx.third_party_root, 'rapidjson')
     ctx.ensure_product_env()
     with ctx.intermediate('rapidjson'):
-        ctx.run("cp -r {}/* .".format(rapidjson_dir))
+        print("rapidjson not found, installing from {}.".format(rapidjson_dir))
+        ctx.run("cp -r \"{}\"/* .".format(rapidjson_dir))
         print("Configuring rapidjson...")
         #ctx.run("mkdir -p build")
         #with ctx.cd("build"):
@@ -87,5 +88,30 @@ def ensure_rapidjson(ctx):
         print("Building rapidjson...")
         ctx.run("cmake --build .")
         print("Installing rapidjson...")
+        ctx.run("cmake --build . --target install")
+        print("Done")
+
+def check_eigen(ctx):
+    """
+    Checks for the existance of Eigen in the product venv
+    """
+    return os.path.exists(ctx.get_product_file('include', 'eigen'))
+
+def ensure_eigen(ctx):
+    """
+    Installs eigen into the product venv.
+    """    
+    if check_eigen(ctx):
+        print("Eigen already installed, skipping")
+        return
+
+    eigen_dir = os.path.join(ctx.third_party_root, 'eigen')
+    ctx.ensure_product_env()
+    with ctx.intermediate('eigen'):
+        print("eigen not found, installing from {}.".format(eigen_dir))
+        ctx.run("cp -r \"{}\"/* .".format(eigen_dir))
+        print("Configuring eigen...")
+        ctx.run("cmake -DCMAKE_INSTALL_PREFIX={} .".format(ctx.product_env))
+        print("Installing eigen")
         ctx.run("cmake --build . --target install")
         print("Done")
