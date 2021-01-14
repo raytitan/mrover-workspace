@@ -35,30 +35,35 @@ def ensure_lcm(ctx):
     Also installs lcm-gen into the Jarvis venv.
     """
     if check_lcm(ctx):
-        print("LCM already installed, skipping.")
+        print("[jarvis] lcm found")
         return
 
     lcmdir = os.path.join(ctx.third_party_root, 'lcm')
     with ctx.intermediate('lcm'):
-        ctx.run("cp -r {}/* .".format(lcmdir))  # TODO: Use python's own cp
-        print("Configuring LCM...")
-        ctx.run("./bootstrap.sh", hide='both')
-        ctx.run("./configure --prefix={}".format(ctx.product_env), hide='both')
-        print("Building LCM...")
-        ctx.run("make", hide='both')
-        print("Installing LCM...")
-        ctx.run("make install", hide='both')
+        print("[jarvis] lcm not found, installing")
+        print("[jarvis][lcm] Retrieving source from {}".format(ctx.product_env))
+        ctx.run("cp -r \"{}\"/* .".format(lcmdir))  # TODO: Use python's own cp
+        print("[jarvis][lcm] Running bootstrap.sh...")
+        ctx.run("./bootstrap.sh")
+        print("[jarvis][lcm] Running configure.sh...")
+        ctx.run("./configure --prefix={}".format(ctx.product_env))
+        print("[jarvis][lcm][make] Building...")
+        ctx.run("make")
+        print("[jarvis][lcm][make] Installing...")
+        ctx.run("make install")
         # Copy the lcm-gen binary into the Jarvis venv so it may be accessible
         # for other parts of the build process.
+        print("[jarvis][lcm] Copying to jarvis venv...")
         shutil.copy("{}/bin/lcm-gen".format(ctx.product_env),
                     "{}/bin/lcm-gen".format(ctx.jarvis_env))
 
         # Install Python library
+        print("[jarvis][lcm] Python installing...")
         with ctx.inside_product_env():
             with ctx.cd('lcm-python'):
                 ctx.run("python setup.py install", hide='both')
 
-    print("Finished installing LCM.")
+    print("[jarvis][lcm] Installation complete")
 
 
 def check_rapidjson(ctx):
@@ -72,46 +77,48 @@ def ensure_rapidjson(ctx):
     Installs rapidjson into the product venv.
     """
     if check_rapidjson(ctx):
-        print("rapidjson already installed, skipping.")
+        print("[jarvis] rapidjson found in {}".format(ctx.product_env))
         return
 
     rapidjson_dir = os.path.join(ctx.third_party_root, 'rapidjson')
     ctx.ensure_product_env()
     with ctx.intermediate('rapidjson'):
-        print("rapidjson not found, installing from {}.".format(rapidjson_dir))
+        print("[jarvis] rapidjson not found in {}, installing".format(ctx.product_env))
+        print("[jarvis][rapidjson] Retrieving source from {}".format(rapidjson_dir))
         ctx.run("cp -r \"{}\"/* .".format(rapidjson_dir))
-        print("Configuring rapidjson...")
+        print("[jarvis][rapidjson][cmake] Generating buildsystem...")
         #ctx.run("mkdir -p build")
         #with ctx.cd("build"):
         ctx.run("cmake -DCMAKE_INSTALL_PREFIX={} .".format(
             ctx.product_env))
-        print("Building rapidjson...")
-        ctx.run("cmake --build .")
-        print("Installing rapidjson...")
+        print("[jarvis][rapidjson][cmake] Building and installing...")
         ctx.run("cmake --build . --target install")
-        print("Done")
+        print("[jarvis][rapidjson] Installation complete")
 
 def check_eigen(ctx):
     """
     Checks for the existance of Eigen in the product venv
     """
-    return os.path.exists(ctx.get_product_file('include', 'eigen'))
+    return os.path.exists(ctx.get_product_file('include', 'eigen3'))
 
 def ensure_eigen(ctx):
     """
     Installs eigen into the product venv.
     """    
     if check_eigen(ctx):
-        print("Eigen already installed, skipping")
+        print("[jarvis] eigen3 found in {}".format(ctx.product_env))
         return
 
-    eigen_dir = os.path.join(ctx.third_party_root, 'eigen')
+    eigen_dir = os.path.join(ctx.third_party_root, 'eigen3')
     ctx.ensure_product_env()
-    with ctx.intermediate('eigen'):
-        print("eigen not found, installing from {}.".format(eigen_dir))
+    with ctx.intermediate('eigen3'):
+        print("[jarvis] eigen3 not found in {}, installing".format(ctx.product_env))
+        print("[jarvis][eigen3] Retrieving source from {}".format(eigen_dir))
         ctx.run("cp -r \"{}\"/* .".format(eigen_dir))
-        print("Configuring eigen...")
-        ctx.run("cmake -DCMAKE_INSTALL_PREFIX={} .".format(ctx.product_env))
-        print("Installing eigen")
-        ctx.run("cmake --build . --target install")
-        print("Done")
+        ctx.run("mkdir -p build")
+        with ctx.cd("build"):
+            print("[jarvis][eigen3][cmake] Generating buildsystem...")
+            ctx.run("cmake -DCMAKE_INSTALL_PREFIX={} ..".format(ctx.product_env))
+            print("[jarvis][eigen3][cmake] Building and installing...")
+            ctx.run("cmake --build . --target install")
+            print("[jarvis][eigen3] Installation complete")

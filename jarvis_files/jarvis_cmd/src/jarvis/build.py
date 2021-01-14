@@ -110,10 +110,10 @@ def build_deps(ctx):
     """
     site_cfg = get_site_cfg()
     ctx.ensure_product_env()
-    if site_cfg['eigen']:
-        third_party.ensure_eigen(ctx)
     if site_cfg['rapidjson']:
         third_party.ensure_rapidjson(ctx)
+    if site_cfg['eigen']:
+        third_party.ensure_eigen(ctx)
     if site_cfg['lcm']:
         third_party.ensure_lcm(ctx)
 
